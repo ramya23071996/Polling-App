@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Polls</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+</head>
+<body>
+    {% for poll in polls %}
+        <h2>{{ poll.question }}</h2>
+        <form action="/vote/{{ poll.id }}" method="POST">
+            {% for choice in poll.choices %}
+                <label><input type="radio" name="choice" value="{{ choice }}">{{ choice }}</label><br>
+            {% endfor %}
+            <button type="submit">Vote</button>
+        </form>
+        <div id="results-{{ poll.id }}"></div>
+    {% endfor %}
+   <script>
+const socket = io();
+
+document.querySelectorAll("form").forEach(form => {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const pollId = this.getAttribute("data-poll-id");
+        const choice = this.querySelector("input[name='choice']:checked").value;
+        socket.emit("vote_cast", { poll_id: pollId, choice: choice });
+    });
+});
+
+socket.on("update_results", function(data) {
+    const pollId = data.poll_id;
+    const results = data.results;
+    document.getElementById(`results-${pollId}`).innerHTML = JSON.stringify(results);
+});
+</script>
+</body>
+</html>
